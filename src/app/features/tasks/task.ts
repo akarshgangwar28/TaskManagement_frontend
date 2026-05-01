@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Task, TaskStatus } from '../../core/models/task.model';
 import { Auth } from '../auth/auth';
 import { Observable, catchError, of, map, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -14,7 +15,7 @@ export class TaskService {
   private tasksState = signal<Task[]>([]);
   public tasks = computed(() => this.tasksState());
 
-  private apiUrl = 'http://localhost:5000/api/tasks';
+  private apiUrl = `${environment.apiUrl}/tasks`;
 
   loadTasks(): void {
     const user = this.auth.currentUser();

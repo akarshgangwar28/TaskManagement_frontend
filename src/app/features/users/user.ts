@@ -2,6 +2,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { User } from '../../core/models/user.model';
 import { Observable, catchError, map, of, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +13,7 @@ export class UserService {
   private usersState = signal<User[]>([]);
   public users = computed(() => this.usersState());
 
-  private apiUrl = 'http://localhost:5000/api/users';
+  private apiUrl = `${environment.apiUrl}/users`;
 
   loadUsers(): void {
     // Note: Automatically restricted via Express backend (403 for Employees)
