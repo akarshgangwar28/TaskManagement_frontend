@@ -1,54 +1,47 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { User, UserRole } from '../../core/models/user.model';
-import { delay, Observable, of } from 'rxjs';
+import { Observable, catchError, of, map } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class Auth {
-  // Use Angular Signals for reactive state
+  private http = inject(HttpClient);
+  
   currentUser = signal<User | null>(null);
 
-  // Mock users
-  private mockUsers: User[] = [
-    { id: '1', username: 'manager', email: 'manager@test.com', role: UserRole.Manager },
-    { id: '2', username: 'teamlead', email: 'lead@test.com', role: UserRole.TeamLead },
-    { id: '3', username: 'employee', email: 'employee@test.com', role: UserRole.Employee }
-  ];
+  private apiUrl = 'http://localhost:5000/api/auth';
 
   constructor() {
     this.loadUserFromStorage();
   }
 
   login(email: string, password: string): Observable<{ success: boolean; user?: User; error?: string }> {
-    // In a real app, this would be an HTTP POST
-    const user = this.mockUsers.find(u => u.email === email);
-    
-    // Simulate API delay, expect password to be 'password' for mocking
-    if (user && password === 'password') {
-      this.currentUser.set(user);
-      localStorage.setItem('auth_token', 'mock-jwt-token');
-      localStorage.setItem('user', JSON.stringify(user));
-      return of({ success: true, user }).pipe(delay(500));
-    }
-    
-    return of({ success: false, error: 'Invalid credentials. Hint: use password as password' }).pipe(delay(500));
+    return this.http.post<{success: boolean, token?: string, user?: User, error?: string}>(`${this.apiUrl}/login`, { email, password })
+      .pipe(
+        map(res => {
+          if (res.success && res.token && res.user) {
+            this.currentUser.set(res.user);
+            localStorage.setItem('auth_token', res.token);
+            localStorage.setItem('user', JSON.stringify(res.user));
+          }
+          return res;
+        }),
+        catchError(err => {
+          return of({ success: false, error: err.error?.error || 'Login failed - API might be down' });
+        })
+      );
   }
 
   register(username: string, email: string, password: string, role: UserRole): Observable<{ success: boolean; error?: string }> {
-    if (this.mockUsers.find(u => u.email === email)) {
-      return of({ success: false, error: 'User already exists with this email' }).pipe(delay(500));
-    }
-
-    const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      username,
-      email,
-      role
-    };
-
-    this.mockUsers.push(newUser);
-    return of({ success: true }).pipe(delay(500));
+    return this.http.post<{success: boolean, msg?: string, error?: string}>(`${this.apiUrl}/register`, { username, email, password, role })
+      .pipe(
+        map(res => res),
+        catchError(err => {
+          return of({ success: false, error: err.error?.error || 'Registration failed' });
+        })
+      );
   }
 
   logout() {
@@ -57,7 +50,6 @@ export class Auth {
     localStorage.removeItem('user');
   }
 
-  // Restore session on app load
   loadUserFromStorage() {
     const userStr = localStorage.getItem('user');
     if (userStr) {
