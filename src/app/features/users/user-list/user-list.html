@@ -8,12 +8,28 @@
     <div class="bg-white/70 backdrop-blur-md rounded-3xl p-6 shadow-xl border border-white/40">
       <h3 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2">Team Leads</h3>
       <div class="space-y-3">
-        <div *ngFor="let tl of getTeamLeads()" class="p-4 bg-white rounded-xl shadow-sm border border-slate-100 flex justify-between items-center">
-          <div>
-            <p class="font-semibold text-slate-800">{{ tl.username }}</p>
-            <p class="text-xs text-slate-500">{{ tl.email }}</p>
+        <div *ngFor="let tl of getTeamLeads()" class="p-4 bg-white rounded-xl shadow-sm border border-slate-100 flex flex-col gap-3">
+          <div class="flex justify-between items-center">
+            <div>
+              <p class="font-semibold text-slate-800">{{ tl.username }}</p>
+              <p class="text-xs text-slate-500">{{ tl.email }}</p>
+            </div>
+            <span class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium">Team Lead</span>
           </div>
-          <span class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium">Team Lead</span>
+          
+          <div class="pt-2 border-t border-slate-100">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Assigned Tasks</h4>
+            <div *ngIf="getTeamLeadTasks(tl.id).length === 0" class="text-xs text-slate-400 italic">No tasks in this team.</div>
+            <div class="space-y-2">
+              <div *ngFor="let task of getTeamLeadTasks(tl.id)" class="bg-slate-50 p-2 rounded border border-slate-100 flex justify-between items-center">
+                <span class="text-sm font-medium text-slate-700 truncate mr-2">{{ task.title }}</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" 
+                  [ngClass]="task.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'">
+                  {{ task.status }}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
         <div *ngIf="getTeamLeads().length === 0" class="text-sm text-slate-500 italic">No Team Leads registered.</div>
       </div>
@@ -34,10 +50,10 @@
           
           <div class="pt-2 border-t border-slate-100 flex items-center justify-between space-x-3">
             <label class="text-xs font-medium text-slate-600">Assign To Team Lead:</label>
-            <select [value]="emp.teamLead || ''" (change)="assignLead(emp.id, $any($event.target).value)"
+            <select (change)="assignLead(emp.id, $any($event.target).value)"
               class="text-sm px-3 py-1.5 rounded bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 flex-1">
-              <option value="">-- No Team --</option>
-              <option *ngFor="let tl of getTeamLeads()" [value]="tl.id">{{ tl.username }}</option>
+              <option value="" [selected]="!emp.teamLead">-- No Team --</option>
+              <option *ngFor="let tl of getTeamLeads()" [value]="tl.id" [selected]="emp.teamLead === tl.id">{{ tl.username }}</option>
             </select>
           </div>
         </div>
